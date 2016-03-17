@@ -27,4 +27,5 @@ app.get(/\/(css|js|img)\/?.*/, restify.serveStatic({directory: './static/'}));
 
 app.listen(config.get('PORT'), config.get('IP'), function () {
   console.log( "Listening on " + config.get('IP') + ", port " + config.get('PORT') )
+  console.log(`Nodejs Version: ${process.version}`);
 });

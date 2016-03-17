@@ -150,6 +150,7 @@ function setup_path_for_custom_node_version() {
    node_bin_path=$(get_node_bin_path "$ver")
 
    #  Add the node binary path to the PATH.
+   export OPENSHIFT_NODEJS_VERSION=0.6
    export PATH="$node_bin_path:${PATH}"
 
    if [ -n "$_SHOW_SETUP_PATH_MESSAGES" ]; then

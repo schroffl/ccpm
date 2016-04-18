@@ -1,31 +1,12 @@
-var cc          = require('config-multipaas'),
-    restify     = require('restify'),
-    fs          = require('fs')
+'use strict';
 
-var config      = cc(),
-    app         = restify.createServer()
+const http = require('http');
 
-app.use(restify.queryParser())
-app.use(restify.CORS())
-app.use(restify.fullResponse())
+const router = require('./lib/router');
+const server = http.createServer(router);
 
-// Routes
-app.get('/status', function (req, res, next)
-{
-  res.send("{status: 'ok'}");
-});
+router.set('port', process.env.OPENSHIFT_NODEJS_PORT || process.env.PORT || 80);
+router.set('ip', process.env.OPENSHIFT_NODEJS_IP || process.env.IP || '0.0.0.0');
 
-app.get('/', function (req, res, next)
-{
-  var data = fs.readFileSync(__dirname + '/index.html');
-  res.status(200);
-  res.header('Content-Type', 'text/html');
-  res.end(data.toString().replace(/host:port/g, req.header('Host')));
-});
-
-app.get(/\/(css|js|img)\/?.*/, restify.serveStatic({directory: './static/'}));
-
-app.listen(config.get('PORT'), config.get('IP'), function () {
-  console.log( "Listening on " + config.get('IP') + ", port " + config.get('PORT') )
-  console.log(`Nodejs Version: ${process.version}`);
-});
+server.listen(router.get('port'), router.get('ip'), () => 
+    console.log(`Server listening on ${router.get('ip')}:${router.get('port')}`) );

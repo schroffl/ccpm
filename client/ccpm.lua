@@ -1,7 +1,7 @@
 --
 local args, commands = { ... }, { };
 local headers = { Accept = 'application/lua', ['User-Agent'] = 'CCPM-Client/0.1.0' };
-local registryURL = 'https://ccpm-schroffl.c9users.io/registry/';
+local registryURL = 'https://ccpm-schroffl.rhcloud.com/registry/';
 local packageFile, moduleBaseDir = 'package.ccp', 'modules';
 
 -- Check whether a given directory has a package file

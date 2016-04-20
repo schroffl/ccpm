@@ -66,6 +66,15 @@ To any file run via this command, the function [`require`](#function-require) wi
 e.g. `ccpm run ./test.lua` runs the file `$dir/test.lua` which then has access to [`require`](#function-require)
 ***
 
+#### set \<property, value\>
+Set the *property* to the given *value* in the ccpm config.  
+e.g. `ccpm set registry https://example.com/` sets the registry to use to `https://example.com/`
+***
+
+#### get \<property\>
+Get the value of a *property* from the ccpm config.
+e.g. `ccpm get registry` prints `https://example.com/` or whatever the registry is set to
+
 ## Exporting and Requiring
 
 #### Exporting

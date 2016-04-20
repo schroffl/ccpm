@@ -14,7 +14,7 @@ We're going to go through this process with the goal to create a little package 
 
 ## <a name="section-register"></a> Creating an Account
 The first thing you want to do in order to publish your packages is to create an account.  
-To do so, just run `ccpm register`, enter your desired username and password and your done.  
+To do so, just run `ccpm register`, enter your desired username and password and you're done.  
 
 Example:  
 ![Register](http://i.imgur.com/frpQxsE.png)

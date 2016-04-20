@@ -8,6 +8,9 @@ This will install ccpm in your root directory
 $ pastebin get GuLjbc5i /ccpm
 ```
 
+## Guide on Publishing Your First Package
+If you want to publish packages via CCPM, take a look at [this](/client/QUICKSTART.md) QuickStart Guide.
+
 ## <a name="disclaimer-versioning"></a> Versioning
 Currently, [Semantic Versioning](http://semver.org/) is being used, and there are no plans on changing that.
 
@@ -18,7 +21,7 @@ Here are some properties it may contain:
 Property | Description | Must-have
 -------------: | :------------- | -------:
 `name`  | The name of the package | yes
-`version`  | The version of the package *(This changes with each update)* | yes
+`version`  | The version of the package *(This must change with each update)* | yes
 `description` | A short description of the package | no
 `main` | The main file of the package *(Default: `index.lua`)* | yes
 `author` | The author of the package *(Does not affect authentication)* | no

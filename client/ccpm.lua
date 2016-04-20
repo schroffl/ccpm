@@ -365,7 +365,7 @@ commands['run'] = function(dir, file)
 		fPath = '/' .. shell.resolve(fPath);
 
 		-- Does the file even exist?308
-		if not fs.exists(fPath) then error('File not found' .. (fPath or 'nil')) end
+		if not fs.exists(fPath) then error('File not found:\n' .. (fPath or 'nil')) end
 
 		-- Set up the environment and load the file
 		local pkgEnv = setmetatable({ }, { __index = _G });

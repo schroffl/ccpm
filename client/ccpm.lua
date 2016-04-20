@@ -1,8 +1,49 @@
 --
 local args, commands = { ... }, { };
 local headers = { Accept = 'application/lua', ['User-Agent'] = 'CCPM-Client/0.1.0' };
-local registryURL = 'https://ccpm-schroffl.c9users.io/registry/';
-local packageFile, moduleBaseDir = 'package.ccp', 'modules';
+local registryURL = 'https://ccpm-schroffl.rhcloud.com/registry/';
+local packageFile, moduleBaseDir, cfgFile = 'package.ccp', 'modules', '.ccpm';
+
+-- Read and parse the ccpm config
+local function getConfigFile(dir)
+	local cfgFilePath = '/' .. shell.resolve(dir .. '/' .. cfgFile);
+
+	if fs.exists(cfgFilePath) then return textutils.unserialize( fs.open(cfgFilePath, 'r').readAll() ) or { }
+	else
+		local fHandle = fs.open(cfgFilePath, 'w');
+		local data = { registry = 'https://ccpm-schroffl.rhcloud.com/registry/' };
+
+		fHandle.write(textutils.serialize(data));
+		fHandle.close();
+		return data;
+	end
+end
+
+-- Save ccpm config
+local function saveConfigFile(dir, data)
+	local cfgFilePath = '/' .. shell.resolve(dir .. '/' .. cfgFile);
+	local fHandle = fs.open(cfgFilePath, 'w');
+
+	fHandle.write(textutils.serialize( data ));
+
+	return fHandle.close();
+end
+
+-- Set a property in the config
+local function setConfigProperty(key, ...)
+	local cfg = getConfigFile('/');
+
+	cfg[key] = table.concat(arg or nil, ' ');
+
+	saveConfigFile('/', cfg);
+	return cfg[key];
+end
+
+-- Get a property from the config
+local function getConfigProperty(key)
+	return getConfigFile('/')[key];
+end
+
 
 -- Check whether a given directory has a package file
 local function hasPackageFile(dir)
@@ -392,8 +433,21 @@ commands['version'] = function(dir, input)
 	savePackageFile(dir, pkgFile);
 end
 
+-- Set a properties value in the config
+commands['set'] = function(dir, key, ...)
+	print(key, '->', setConfigProperty( key, unpack(arg) ));
+end
+
+-- Get a properties value from the config
+commands['get'] = function(dir, key)
+	print(getConfigProperty( key ));
+end
+
 -- Alias for install
 commands['i'] = commands['install'];
+
+-- Get the registry URL from the config
+registryURL = getConfigFile('/').registry or registryURL;
 
 -- Exctract the supplied command and call its corresponding function
 local cmd = table.remove(args, 1);

@@ -26,6 +26,7 @@ Property | Description | Must-have
 `main` | The main file of the package *(Default: `index.lua`)* | yes
 `author` | The author of the package *(Does not affect authentication)* | no
 `dependencies` | Any dependencies needed for the package | no
+`keywords` | A few keywords to precisely describe your package | no
 
 ## Commands
 Commands are meant to be run with this syntax: `ccpm <command> <...>`  

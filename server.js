@@ -1,5 +1,7 @@
 'use strict';
 
+global.datadir = process.argv[2] || __dirname;
+
 const http = require('http');
 
 const router = require('./lib/router');

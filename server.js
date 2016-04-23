@@ -1,6 +1,6 @@
 'use strict';
 
-global.datadir = process.argv[2] || __dirname;
+global.datadir = process.env.OPENSHIFT_DATA_DIR || __dirname;
 
 const http = require('http');
 

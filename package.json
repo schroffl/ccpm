@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "echo \"Running Openshift Configuration\" & node server.js $OPENSHIFT_DATA_DIR"
+    "start": "node server.js"
   },
   "author": "schroffl",
   "license": "MIT",

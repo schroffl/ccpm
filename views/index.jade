@@ -28,7 +28,12 @@ html(ng-app="ccpm", lang="en")
                 input(type="text", class="form-control", placeholder="Search packages...", ng-model="searchText", ng-change="search(searchText)")
                 span(class="input-group-addon btn", ng-click="search(searchText)")
                     span(class="fa fa-search")
-                    
+                
+            center(ng-show="searchText", style="font-size: 20px;")
+                span {{ list.length }} result{{ list.length !== 1 ? 's' : '' }} for 
+                    span(style="color: #4A3883;") '{{ searchText }}'
+
+            hr(ng-show="list.length")
 
             div(class="package-container")
 

@@ -1,7 +1,4 @@
-var module = angular.module('ccpm', [ ]), /* global angular */
-    keyIsDown = false;
-
-module.filter()
+var module = angular.module('ccpm', [ ]); /* global angular */
 
 module.controller('PackageController', function( $scope ) {
    
@@ -31,8 +28,7 @@ module.controller('PackageController', function( $scope ) {
                     // $scope.searching = false;
                     console.error(err);
                 }
-                
-                console.log($scope.getPageAmount())
+
                 $scope.$apply();
             }
         };

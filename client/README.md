@@ -31,8 +31,14 @@ Property | Description | Must-have
 ## Commands
 Commands are meant to be run with this syntax: `ccpm <command> <...>`  
 **Note:** For this documentation, `$dir` will represent the directory in which the command is run  
+***
 
-#### install \<package*[@version] [--save]*\>
+#### help \<command\>
+Display a description and usage of the given command.  
+`ccpm help install` shows information about the `install` command.
+***
+
+#### install \<package*[@version]*\> *[--save]*
 Install a given package at an optionally specified version.  
 If *version* is omitted, it will automatically install the latest version of the package.  
 If the flag *--save* is set, it will save the package to the dependencies in `$dir/package.ccp`.  

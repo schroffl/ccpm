@@ -239,212 +239,261 @@ end
 
 -- Initialize a new package in the given directory
 -- @param dir - The directory in which to set up the package
-commands['init'] = function(dir)
-	if hasPackageFile(dir) then error('This directory already contains a ' .. packageFile, -1) end
+commands['init'] = {
+	func = function(dir)
+		if hasPackageFile(dir) then error('This directory already contains a ' .. packageFile, -1) end
 
-	local req = httpRequest('get', true, urlify(registryURL, 'init'), headers);
+		local req = httpRequest('get', true, urlify(registryURL, 'init'), headers);
 
-	if req.success then
-		-- Start prompting the user for required information
-		for i, key in ipairs(req.body.prompt) do
-			req.body[packageFile][key] = prompt(key .. ': ');
+		if req.success then
+			-- Start prompting the user for required information
+			for i, key in ipairs(req.body.prompt) do
+				if type(req.body[packageFile][key]) == 'string' then req.body[packageFile][key] = string.gsub(req.body[packageFile][key], '%$dirname', dir):gsub('^/', '') end
+
+				local res = prompt(key .. ': ');
+				req.body[packageFile][key] = #res > 0 and res or req.body[packageFile][key];
+			end
+
+			dirify(dir, { [packageFile] = textutils.serialize(req.body[packageFile]) });
+		else
+			throwServerResponse(req.body.error);
 		end
-
-		req.body.prompt = nil;
-		req.body[packageFile] = textutils.serialize(req.body[packageFile]);
-
-		dirify(dir, req.body);
-	else
-		throwServerResponse(req.body.error);
-	end
-end
+	end,
+	help = "Initialize a new package in the current directory. You will be prompted for required information",
+	usage = "init"
+};
 
 -- Publish the package in the given directory
 -- @param dir - The directory of the package
-commands['publish'] = function(dir)
-	local pkgInfo = getPackageFile(dir);
-	local pkgDir = tablify(dir);
+commands['publish'] = {
+	func = function(dir)
+		local pkgInfo = getPackageFile(dir);
+		local pkgDir = tablify(dir);
 
-	pkgDir[packageFile] = pkgInfo;
+		pkgDir[packageFile] = pkgInfo;
 
-	local uName, uPass = gatherCredentials();
-	local authHeaders = { ['x-auth-username'] = uName, ['x-auth-password'] = uPass };
+		local uName, uPass = gatherCredentials();
+		local authHeaders = { ['x-auth-username'] = uName, ['x-auth-password'] = uPass };
 
-	local req = httpRequest( 'post', true, urlify(registryURL, 'package', pkgInfo.name, pkgInfo.version), textutils.serializeJSON(pkgDir), merge(authHeaders, headers) );
+		local req = httpRequest( 'post', true, urlify(registryURL, 'package', pkgInfo.name, pkgInfo.version), textutils.serializeJSON(pkgDir), merge(authHeaders, headers) );
 
-	if req.success then
-		print(req.body.msg);
-	else
-		throwServerResponse(req.body.error);
-	end
-end
+		if req.success then
+			print(req.body.msg);
+		else
+			throwServerResponse(req.body.error);
+		end
+	end,
+	help = "Publish a package. You will be prompted for username and password",
+	usage = "publish"
+};
 
 -- Install a package into a directory module folder
 -- @param dir - The directory in which to install the module
 -- @param input - An input string containing package name and version
-commands['install'] = function(dir, input, save, iterations)
-	-- No package specified? Silly user...
-	if type(input) ~= 'string' then error('No package specified', -1)
-	elseif type(iterations) ~= 'number' then iterations = 0 end
+commands['install'] = { 
+	func = function(dir, input, save, iterations)
+		-- No package specified? Silly user...
+		if type(input) ~= 'string' then error('No package specified', -1)
+		elseif type(iterations) ~= 'number' then iterations = 0 end
 
-	-- Extract package name and version, if an invalid version format is used, it's going to install the latest version
-	local name, rest = string.match(input:lower(), '^([%a\-\_]+)(.*)$');
-	local version = rest and string.match(rest:lower(), '^@(%d+%.%d+%.%d+)$') or 'latest';
+		-- Extract package name and version, if an invalid version format is used, it's going to install the latest version
+		local name, rest = string.match(input:lower(), '^([%a\-\_]+)(.*)$');
+		local version = rest and string.match(rest:lower(), '^@(%d+%.%d+%.%d+)$') or 'latest';
 
-	-- Perform the request
-	local req = httpRequest('get', true, urlify(registryURL, 'package', name, version), headers);
+		-- Perform the request
+		local req = httpRequest('get', true, urlify(registryURL, 'package', name, version), headers);
 
-	-- It was successful
-	if req.success then
-		local pkgInfo = req.body[packageFile];
-		local pkgExists = hasPackageFile(getModuleDir(dir) .. pkgInfo.name) and getPackageFile(getModuleDir(dir) .. pkgInfo.name) or nil;
+		-- It was successful
+		if req.success then
+			local pkgInfo = req.body[packageFile];
+			local pkgExists = hasPackageFile(getModuleDir(dir) .. pkgInfo.name) and getPackageFile(getModuleDir(dir) .. pkgInfo.name) or nil;
 
-		-- Save the package to dependencies
-		if save == '--save' then
-			local pkgFile = getPackageFile(dir);
-			pkgFile.dependencies[pkgInfo.name] = pkgInfo.version;
-			savePackageFile(dir, pkgFile);
+			-- Save the package to dependencies
+			if save == '--save' then
+				local pkgFile = getPackageFile(dir);
+				pkgFile.dependencies[pkgInfo.name] = pkgInfo.version;
+				savePackageFile(dir, pkgFile);
+			end
+
+			-- Gives some idea of dependency level
+			io.write(string.rep(' ', iterations));
+
+			-- Tell the user if the package is already installed
+			if pkgExists then print(pkgInfo.name , 'already installed. Updating');
+			else print('Installing', pkgInfo.name .. '@' .. pkgInfo.version) end
+
+			-- Repeat this process for all dependencies
+			for n, v in pairs(pkgInfo.dependencies) do commands['install']( dir, n .. '@' .. v, '', iterations + 1 ) end
+
+			req.body[packageFile] = hexify(textutils.serialize( pkgInfo ));
+			dirify(getModuleDir(dir) .. pkgInfo.name, req.body, true);
+
+			io.write(string.rep(' ', iterations)); -- Again: dependency level
+			print('Successfully installed', pkgInfo.name .. '@' .. pkgInfo.version);
+
+		-- It wasn't...
+		else
+			throwServerResponse(req.body.error);
 		end
-
-		-- Gives some idea of dependency level
-		io.write(string.rep(' ', iterations));
-
-		-- Tell the user if the package is already installed
-		if pkgExists then print(pkgInfo.name , 'already installed. Updating');
-		else print('Installing', pkgInfo.name .. '@' .. pkgInfo.version) end
-
-		-- Repeat this process for all dependencies
-		for n, v in pairs(pkgInfo.dependencies) do commands['install']( dir, n .. '@' .. v, '', iterations + 1 ) end
-
-		req.body[packageFile] = hexify(textutils.serialize( pkgInfo ));
-		dirify(getModuleDir(dir) .. pkgInfo.name, req.body, true);
-
-		io.write(string.rep(' ', iterations)); -- Again: dependency level
-		print('Successfully installed', pkgInfo.name .. '@' .. pkgInfo.version);
-
-	-- It wasn't...
-	else
-		throwServerResponse(req.body.error);
-	end
-end
+	end,
+	help = "Install a given package",
+	usage = "install <name[@version]> <[--save]>"
+};
 
 -- Remove a package from a directories modules folder
 -- @param dir - The directory
 -- @param pkg the packages name
-commands['remove'] = function(dir, pkgName, save)
-	if type(pkgName) ~= 'string' then error('No package specified', -1) end
+commands['remove'] = {
+	func = function(dir, pkgName, save)
+		if type(pkgName) ~= 'string' then error('No package specified', -1) end
 
-	local pkgDir = getModuleDir(dir) .. pkgName;
-	local pkgInfo = getPackageFile(pkgDir);
+		local pkgDir = getModuleDir(dir) .. pkgName;
+		local pkgInfo = getPackageFile(pkgDir);
 
-	-- Remove the package from the dependencies as well?
-	if save == '--save' then
-	end
+		-- Remove the package from the dependencies as well?
+		if save == '--save' then
+		end
 
-	print('Removing', pkgDir);
-	print(fs.delete(pkgDir));
-end
+		print('Removing', pkgDir);
+		print(fs.delete(pkgDir));
+	end,
+	help = "Delete a given package",
+	usage = "remove <name>"
+};
 
 -- Run a given file
-commands['run'] = function(dir, file)
-	local pkgFile = not file and getPackageFile(dir) or { };
+commands['run'] = {
+	func = function(dir, file)
+		local pkgFile = not file and getPackageFile(dir) or { };
 
-	local function require(fName, path)
-		local isPkgName = string.find(fName, '^[%a%-_]+$') and true or false;
-		local fPath = '';
+		local function require(fName, path)
+			local isPkgName = string.find(fName, '^[%a%-_]+$') and true or false;
+			local fPath = '';
 
-		-- It's a package name
-		if isPkgName then
-			local pkgPath = getModuleDir(dir) .. fName .. '/';
-			fPath =  pkgPath .. '/' .. getPackageFile(pkgPath).main;
-		-- It's an absolute or relative path
-		else
-			fPath = path .. '/' .. fName;
+			-- It's a package name
+			if isPkgName then
+				local pkgPath = getModuleDir(dir) .. fName .. '/';
+				fPath =  pkgPath .. '/' .. getPackageFile(pkgPath).main;
+			-- It's an absolute or relative path
+			else
+				fPath = path .. '/' .. fName;
+			end
+
+			fPath = '/' .. shell.resolve(fPath);
+
+			-- Does the file even exist?308
+			if not fs.exists(fPath) then error('File not found:\n' .. (fPath or 'nil')) end
+
+			-- Set up the environment and load the file
+			local pkgEnv = setmetatable({ }, { __index = _G });
+			local pkgFunc = assert(loadfile( fPath ));
+
+			-- Create a wrapper to automatically keep track of the current path
+			pkgEnv.require = function(fName)
+				local extractedPath = string.match(fPath, '^(.*/)(.+)$');
+				return require(fName, extractedPath);
+			end
+
+			-- Set the environment
+			setfenv(pkgFunc, pkgEnv);
+
+			-- Return the packages 'exports'
+			return pkgFunc();
 		end
 
-		fPath = '/' .. shell.resolve(fPath);
-
-		-- Does the file even exist?308
-		if not fs.exists(fPath) then error('File not found:\n' .. (fPath or 'nil')) end
-
-		-- Set up the environment and load the file
-		local pkgEnv = setmetatable({ }, { __index = _G });
-		local pkgFunc = assert(loadfile( fPath ));
-
-		-- Create a wrapper to automatically keep track of the current path
-		pkgEnv.require = function(fName)
-			local extractedPath = string.match(fPath, '^(.*/)(.+)$');
-			return require(fName, extractedPath);
-		end
-
-		-- Set the environment
-		setfenv(pkgFunc, pkgEnv);
-
-		-- Return the packages 'exports'
-		return pkgFunc();
-	end
-
-	-- Require this package or the given file to get everything running
-	require('./' .. file, dir);
-end
+		-- Require this package or the given file to get everything running
+		require('./' .. file, dir);
+	end,
+	help = "Run a file with function require exposed to it",
+	usage = "ccpm run <file>"
+};
 
 -- Create a new account
-commands['register'] = function(dir)
-	local uName, uPass = gatherCredentials();
+commands['register'] = { 
+	func = function(dir)
+		local uName, uPass = gatherCredentials();
 
-	local req = httpRequest( 'post', true, urlify(registryURL, 'user'), textutils.serializeJSON({ name = uName, pass = uPass }), headers );
+		local req = httpRequest( 'post', true, urlify(registryURL, 'user'), textutils.serializeJSON({ name = uName, pass = uPass }), headers );
 
-	if req.success then
-		print(req.body.msg);
-	else
-		throwServerResponse(req.body.error);
-	end
-end
+		if req.success then
+			print(req.body.msg);
+		else
+			throwServerResponse(req.body.error);
+		end
+	end,
+	help = "Create a new account. You will be prompted for username and password",
+	usage = "register"
+};
 
 -- Update the version of a package
-commands['version'] = function(dir, input)
-	local pkgFile = getPackageFile(dir);
-	local major, minor, patch = string.match(pkgFile.version, '^(%d+)%.(%d+)%.(%d+)$')
+commands['version'] = {
+	func = function(dir, input)
+		local pkgFile = getPackageFile(dir);
+		local major, minor, patch = string.match(pkgFile.version, '^(%d+)%.(%d+)%.(%d+)$')
 
-	major = tonumber(major);
-	minor = tonumber(minor);
-	patch = tonumber(patch);
+		major = tonumber(major);
+		minor = tonumber(minor);
+		patch = tonumber(patch);
 
-	local previous = major .. '.' .. minor .. '.' .. patch;
+		local previous = major .. '.' .. minor .. '.' .. patch;
 
-	if input == 'major' then 
-		major = major + 1;
-		minor = 0;
-		patch = 0;
-	elseif input == 'minor' then
-		minor = minor + 1;
-		patch = 0;
-	elseif input == 'patch' then
-		patch = patch + 1;
-	else
-		major, minor, patch = string.match(input or '', '^(%d+)%.(%d+)%.(%d+)$');
-		if not major or not minor or not patch then error('Invalid version format', -1) end
-	end
+		if input == 'major' then 
+			major = major + 1;
+			minor = 0;
+			patch = 0;
+		elseif input == 'minor' then
+			minor = minor + 1;
+			patch = 0;
+		elseif input == 'patch' then
+			patch = patch + 1;
+		else
+			major, minor, patch = string.match(input or '', '^(%d+)%.(%d+)%.(%d+)$');
+			if not major or not minor or not patch then error('Invalid version format', -1) end
+		end
 
-	pkgFile.version = major .. '.' .. minor .. '.' .. patch;
+		pkgFile.version = major .. '.' .. minor .. '.' .. patch;
 
-	print(previous, '->', pkgFile.version);
+		print(previous, '->', pkgFile.version);
 
-	savePackageFile(dir, pkgFile);
-end
+		savePackageFile(dir, pkgFile);
+	end,
+	help = "Increment the version of your package",
+	usage = "version <major|minor|patch>"
+};
 
 -- Set a properties value in the config
-commands['set'] = function(dir, key, ...)
-	print(key, '->', setConfigProperty( key, unpack(arg) ));
-end
+commands['set'] = {
+	func = function(dir, key, ...)
+		print(key, '->', setConfigProperty( key, unpack(arg) ));
+	end,
+	help = "Set a property in the ccpm config",
+	usage = "set <property> <value>"
+};
 
 -- Get a properties value from the config
-commands['get'] = function(dir, key)
-	print(getConfigProperty( key ));
-end
+commands['get'] = {
+	func = function(dir, key)
+		print(getConfigProperty( key ));
+	end,
+	help = "Get a property from the ccpm config",
+	usage = "get <property>"
+};
 
 -- Alias for install
 commands['i'] = commands['install'];
+
+-- Print some help
+commands['help'] = {
+	func = function(dir, command)
+		if type(commands[command]) == 'nil' then error('Unkown command: ' .. (command or 'nil'), -1)
+		else 
+			print(commands[command].help, '\n');
+			print('Usage:', commands[command].usage);
+		end
+	end,
+	help = "Print the help message for a given command",
+	usage = "help <command>"
+};
 
 -- Get the registry URL from the config
 registryURL = getConfigFile('/').registry or registryURL;
@@ -452,5 +501,6 @@ registryURL = getConfigFile('/').registry or registryURL;
 -- Exctract the supplied command and call its corresponding function
 local cmd = table.remove(args, 1);
 
-if type(commands[cmd]) ~= 'nil' then commands[ cmd ]( unpack({ '/' .. shell.dir(), unpack(args) }) )
-else error('Unkown command: ' .. (cmd or 'nil'), -1) end
+cmd = type(commands[cmd]) == 'nil' and 'help' or cmd;
+
+commands[ cmd ].func( unpack({ '/' .. shell.dir(), unpack(args) }) );

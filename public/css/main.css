@@ -27,7 +27,7 @@ hr {
 }
 
 .package {
-    margin: 6px 0px;
+    margin: 24px 0px;
     color: #4A3883;
 }
 .package h3 {
@@ -73,6 +73,9 @@ hr {
 .pager .active a {
     border-color: #4A3883 !important;
     background-color: #4A3883 !important;
+}
+.pager li[title] {
+    cursor: default;
 }
 
 .wave-loader div {

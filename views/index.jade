@@ -20,7 +20,7 @@ html(ng-app="ccpm", lang="en")
         nav(class="navbar navbar-default")
             div(class="container")
                 div(class="navbar-brand")
-                    span CCPM
+                    a(href="/") CCPM
 
         div(class="container")
 
@@ -31,7 +31,7 @@ html(ng-app="ccpm", lang="en")
                 
             center(ng-show="lastSearch", style="font-size: 20px;")
                 span {{ list.length }} {{ list.length === 1 ? 'result' : 'results' }} for 
-                    span(style="color: #4A3883;") '{{ lastSearch }}'
+                    a(class="results", href="?q={{ lastSearch }}") '{{ lastSearch }}'
 
             hr(ng-show="list.length")
 

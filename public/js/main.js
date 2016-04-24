@@ -29,6 +29,7 @@ module.controller('PackageController', function( $scope ) {
                     console.error(err);
                 }
 
+                $scope.lastSearch = query;
                 $scope.$apply();
             }
         };
@@ -45,5 +46,7 @@ module.controller('PackageController', function( $scope ) {
         return Math.ceil($scope.list.length / $scope.iPP);
     };
 
-    $scope.search();
+    window.onload = function() {
+        $scope.search($scope.searchText);
+    };
 });

@@ -25,13 +25,13 @@ html(ng-app="ccpm", lang="en")
         div(class="container")
 
             div(class="input-group searchbar")
-                input(type="text", class="form-control", placeholder="Search packages...", ng-model="searchText", ng-change="search(searchText)")
+                input(type="text", class="form-control", placeholder="Search packages...", ng-model="searchText", ng-keydown="$event.which === 13 && search(searchText)", ng-init="searchText = '#{query}'")
                 span(class="input-group-addon btn", ng-click="search(searchText)")
                     span(class="fa fa-search")
                 
-            center(ng-show="searchText", style="font-size: 20px;")
-                span {{ list.length }} result{{ list.length !== 1 ? 's' : '' }} for 
-                    span(style="color: #4A3883;") '{{ searchText }}'
+            center(ng-show="lastSearch", style="font-size: 20px;")
+                span {{ list.length }} {{ list.length === 1 ? 'result' : 'results' }} for 
+                    span(style="color: #4A3883;") '{{ lastSearch }}'
 
             hr(ng-show="list.length")
 

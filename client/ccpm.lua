@@ -56,9 +56,11 @@ local function getPackageFile(dir)
 	local path = dir .. '/' .. packageFile;
 
 	if hasPackageFile(dir) then
-		local handle, content, parsed = fs.open(path, 'r');
-		content = handle.readAll();
+		local fHandle, content, parsed = fs.open(path, 'r');
+		content = fHandle.readAll();
 		parsed = textutils.unserialize(content);
+
+		fHandle.close();
 
 		if type(parsed) == 'nil' then return error('Unable to parse ' .. packageFile);
 		else return parsed end
@@ -355,7 +357,7 @@ commands['remove'] = {
 		end
 
 		print('Removing', pkgDir);
-		print(fs.delete(pkgDir));
+		fs.delete(pkgDir);
 	end,
 	help = "Delete a given package",
 	usage = "remove <name>"

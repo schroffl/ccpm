@@ -17,7 +17,7 @@ Currently, [Semantic Versioning](http://semver.org/) is being used, and there ar
 ## package.ccp
 This file is used to hold information about a package. It's content is basically just a serialized lua table.
 Here are some properties it may contain:
-  
+
 Property | Description | Must-have
 -------------: | :------------- | -------:
 `name`  | The name of the package | yes

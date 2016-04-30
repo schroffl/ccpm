@@ -383,7 +383,7 @@ commands['remove'] = {
 -- Run a given file
 commands['run'] = {
 	func = function(dir, file)
-		local pkgFile = not file and getPackageFile(dir) or { };
+		if not file then error('No file specified', -1) end
 
 		local function require(fName, path)
 			local isPkgName = string.find(fName, '^[%a%-_]+$') and true or false;

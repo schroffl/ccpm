@@ -5,7 +5,7 @@ It allows for multi-file packages and takes care of dependencies.
 ## Installation
 This will install ccpm in your root directory
 ```shell
-$ pastebin get Wpb8LUPu /ccpm
+$ pastebin get nC31Jd6H /ccpm
 ```
 
 ## Guide on Publishing Your First Package

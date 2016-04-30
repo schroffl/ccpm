@@ -238,6 +238,23 @@ local function throwServerResponse(err)
 	return error('> ' .. (err or ''), -1);
 end
 
+-- Print some help
+commands['help'] = {
+	func = function(dir, command)
+		if type(commands[command]) == 'nil' then 
+			print(commands.help.usage);
+
+			for cmd, val in pairs(commands) do
+				print('\t*', cmd);
+			end
+		else
+			print(commands[command].help, '\n');
+			print('Usage:', commands[command].usage);
+		end
+	end,
+	help = "Print the help message for a given command",
+	usage = "help <command>"
+};
 
 -- Initialize a new package in the given directory
 -- @param dir - The directory in which to set up the package
@@ -482,19 +499,10 @@ commands['get'] = {
 };
 
 -- Alias for install
-commands['i'] = commands['install'];
-
--- Print some help
-commands['help'] = {
-	func = function(dir, command)
-		if type(commands[command]) == 'nil' then error('Unkown command: ' .. (command or 'nil'), -1)
-		else 
-			print(commands[command].help, '\n');
-			print('Usage:', commands[command].usage);
-		end
-	end,
-	help = "Print the help message for a given command",
-	usage = "help <command>"
+commands['i'] = {
+	func = commands.install.func,
+	help = 'Same as `install`',
+	usage = commands.install.usage:gsub('install', 'i')
 };
 
 -- Get the registry URL from the config

@@ -35,6 +35,7 @@ Commands are meant to be run with this syntax: `ccpm <command> <...>`
 
 #### help \<command\>
 Display a description and usage of the given command.  
+If no command is given, it will just print a list of commands available.  
 `ccpm help install` shows information about the `install` command.
 ***
 
